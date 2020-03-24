@@ -1,0 +1,67 @@
+apiVersion: app.kiegroup.org/v2
+kind: KieApp
+metadata:
+  name: rhpam-authoring
+spec:
+  environment: rhpam-authoring
+  useImageTags: true
+  commonConfig:
+    adminUser: admin
+    adminPassword: redhat
+    amqPassword: redhat
+    amqClusterPassword: redhat
+    keyStorePassword: mykeystorepass
+    dbPassword: redhat
+  objects:
+    console:
+      keystoreSecret: businesscentral-app-secret
+      gitHooks:
+        mountPath: /opt/kie/data/git/hooks
+        from:
+          kind: ConfigMap
+          name: pam7-githooks
+      env:
+        - name: MAVEN_REPO_URL
+          value: >-
+            http://nexus3-demo-nexus.apps.cluster.demo.local/repository/maven-pam7-project/
+        - name: MAVEN_REPO_ID
+          value: maven-pam7-project
+        - name: MAVEN_REPO_USERNAME
+          value: admin
+        - name: MAVEN_REPO_PASSWORD
+          value: admin123
+        - name: MAVEN_MIRROR_URL
+          value: >-
+            http://nexus3-demo-nexus.apps.cluster.demo.local/repository/maven-pam7/
+        - name: MAVEN_MIRROR_OF
+          value: 'external:*,!maven-pam7-project'
+    servers:
+      - id: kie1
+        name: kie1
+        deployments: 1
+        keystoreSecret: kieserver-app-secret
+        env:
+          - name: MAVEN_REPO_URL
+            value: >-
+              http://nexus3-demo-nexus.apps.cluster.demo.local/repository/maven-pam7-kie/
+          - name: MAVEN_REPO_ID
+            value: maven-pam7-kie
+          - name: MAVEN_REPO_USERNAME
+            value: admin
+          - name: MAVEN_REPO_PASSWORD
+            value: admin123
+        jms:
+          username: admin
+          password: redhat
+          amqSecretName: broker-app-secret
+          amqTruststoreName: keystore.jks
+          amqTruststorePassword: mykeystorepass
+          amqKeystoreName: keystore.jks
+          amqKeystorePassword: mykeystorepass
+          amqEnableSSL: true
+          enableIntegration: true
+        database:
+          type: postgresql
+    smartRouter:
+      keystoreSecret: smartrouter-app-secret
+      replicas: 1
